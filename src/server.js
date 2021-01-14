@@ -4,7 +4,9 @@ const { join } = require("path")
 const listEndpoints = require("express-list-endpoints")
 const mongoose = require("mongoose")
 // ADD TO THE ENV LIST MONGO_CONNECTION AND PORT 
-const articleRouter = require("./services/articles")
+const articleRouter = require("./services/articles");
+const authorsRouter = require("./services/authors")
+
 require("dotenv/config");
 const {
   notFoundHandler,
@@ -23,6 +25,7 @@ server.use(express.json())
 server.use(cors())
 
 server.use("/articles", articleRouter)
+server.use("/authors", authorsRouter)
 
 
 server.use(badRequestHandler)

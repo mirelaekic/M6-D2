@@ -1,6 +1,7 @@
 const { Schema } = require("mongoose")
 const mongoose = require("mongoose")
 const mongoosePaginate = require("mongoose-paginate-v2")
+//mongoose-paginate-v2
 
 const newArticle = new Schema(
   {
@@ -17,7 +18,7 @@ const newArticle = new Schema(
       required: true,
     },
     category: {
-      type: String,
+      type: Object,
       name:String,
       img:String,
     },
@@ -27,6 +28,16 @@ const newArticle = new Schema(
         img:String,
       },
     cover: String,
+    reviews: [{
+      user: {
+        type:String,
+        required: true,
+      },
+      text: {
+        type:String,
+        required: true
+      }
+    }]
   },
   { timestamps: true }
 )
