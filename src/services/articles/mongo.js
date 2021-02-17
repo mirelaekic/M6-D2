@@ -23,9 +23,7 @@ const newArticle = new Schema(
       img:String,
     },
     author: {
-        type: String,
-        name:String,
-        img:String,
+        type:String,
       },
     cover: String,
     reviews: [{
@@ -43,5 +41,8 @@ const newArticle = new Schema(
 )
 
 newArticle.plugin(mongoosePaginate)
-
+/*newArticle.static("findArticleWithAuthor",async(id) => {
+  const article = await this.findById(id).populate(author)
+  return article
+})*/
 module.exports = mongoose.model("newArticle", newArticle)

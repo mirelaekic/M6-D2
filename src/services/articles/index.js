@@ -67,6 +67,11 @@ articleRouter.get("/:id", async (req, res, next) => {
 //POST ARTICLE
 articleRouter.post("/", async (req, res, next) => {
   try {
+    /*const article = {...req.body}
+    article.author = req.author.name
+    article.author = await AuthorSchema.find({email:article.author}, {_id:1})
+    article.author = article.author[0]._id
+    const newarticle = new newArticle(article)*/
     const postArticle = new newArticle(req.body);
     const { _id } = await postArticle.save();
     res.status(201).send(_id);
@@ -170,7 +175,7 @@ articleRouter.get("/:id/reviews/:reviewId", async (req, res, next) => {
 // DELETE /articles/:id/reviews/:reviewId => delete the review belonging to the specified article
 articleRouter.delete("/:id/reviews/:reviewId", async (req, res, next) => {
   try {
-    const modifiedReview = await newArticle.findByIdAndUpdate(
+    const modifiedReview = await newArticle.findByIdAndDelete(
       req.params.id,
       {
         $pull: {

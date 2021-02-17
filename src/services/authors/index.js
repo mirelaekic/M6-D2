@@ -1,6 +1,8 @@
   
 const express = require("express")
-
+const q2m = require("query-to-mongo")
+const { authenticate, refreshToken } = require("../auth/tool")
+const { authorize } = require("../auth/mdw")
 const AuthorSchema = require("./authorSchema")
 
 const authorsRouter = express.Router()
@@ -14,8 +16,7 @@ authorsRouter.get("/", async (req, res, next) => {
   }
 })
 
-
-authorsRouter.get("/:id", async (req, res, next) => {
+authorsRouter.get("/:id",authorize, async (req, res, next) => {
   try {
     const id = req.params.id
     const author = await AuthorSchema.findById(id)
@@ -31,8 +32,14 @@ authorsRouter.get("/:id", async (req, res, next) => {
     next("While reading authors list a problem occurred!")
   }
 })
-
-authorsRouter.post("/", async (req, res, next) => {
+authorsRouter.get("/me", authorize, async (req, res, next) => {
+  try {
+    res.send(req.author)
+  } catch (error) {
+    next(error)
+  }
+})
+authorsRouter.post("/register", async (req, res, next) => {
   try {
     const newAuthor = new AuthorSchema(req.body)
     const { _id } = await newAuthor.save()
@@ -43,33 +50,73 @@ authorsRouter.post("/", async (req, res, next) => {
   }
 })
 
-authorsRouter.put("/:id", async (req, res, next) => {
+authorsRouter.put("/me",authorize, async (req, res, next) => {
   try {
-    const author = await AuthorSchema.findByIdAndUpdate(req.params.id, req.body)
-    if (author) {
-      res.send("Ok")
-    } else {
-      const error = new Error(`author with id ${req.params.id} not found`)
-      error.httpStatusCode = 404
-      next(error)
-    }
+    const updates = Object.keys(req.body)
+    updates.forEach(update => (req.user[update] = req.body[update]))
+    await req.user.save()
+    res.send(req.user)
   } catch (error) {
     next(error)
   }
 })
 
-authorsRouter.delete("/:id", async (req, res, next) => {
+authorsRouter.delete("/me", async (req, res, next) => {
   try {
-    const author = await AuthorSchema.findByIdAndDelete(req.params.id)
-    if (author) {
-      res.send("Deleted")
-    } else {
-      const error = new Error(`author with id ${req.params.id} not found`)
-      error.httpStatusCode = 404
-      next(error)
-    }
+    await req.author.deleteOne(res.send("Author deleted"))
   } catch (error) {
     next(error)
+  }
+})
+
+authorsRouter.post("/login", async (req, res, next) => {
+  try {
+    const { email, password } = req.body
+    const author = await AuthorSchema.findByCredentials(email, password)
+    const tokens = await authenticate(author)
+    res.send(tokens)
+  } catch (error) {
+    next(error)
+  }
+})
+authorsRouter.post("/logout", authorize, async (req, res, next) => {
+  try {
+    req.author.refreshTokens = req.author.refreshTokens.filter(
+      t => t.token !== req.body.refreshToken
+    )
+    await req.author.save()
+    res.send()
+  } catch (err) {
+    next(err)
+  }
+})
+
+authorsRouter.post("/logoutAll", authorize, async (req, res, next) => {
+  try {
+    req.author.refreshTokens = []
+    await req.author.save()
+    res.send()
+  } catch (err) {
+    next(err)
+  }
+})
+
+authorsRouter.post("/refreshToken", async (req, res, next) => {
+  const oldRefreshToken = req.body.refreshToken
+  if (!oldRefreshToken) {
+    const err = new Error("Refresh token missing")
+    err.httpStatusCode = 400
+    next(err)
+  } else {
+    try {
+      const newTokens = await refreshToken(oldRefreshToken)
+      res.send(newTokens)
+    } catch (error) {
+      console.log(error)
+      const err = new Error(error)
+      err.httpStatusCode = 403
+      next(err)
+    }
   }
 })
 
