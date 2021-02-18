@@ -1,9 +1,11 @@
   
 const express = require("express")
+const passport = require("passport")
 const q2m = require("query-to-mongo")
 const { authenticate, refreshToken } = require("../auth/tool")
 const { authorize } = require("../auth/mdw")
 const AuthorSchema = require("./authorSchema")
+
 
 const authorsRouter = express.Router()
 
@@ -119,5 +121,30 @@ authorsRouter.post("/refreshToken", async (req, res, next) => {
     }
   }
 })
+
+authorsRouter.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+)
+
+authorsRouter.get(
+  "/googleRedirect",
+  passport.authenticate("google"),
+  async (req, res, next) => {
+    try {
+      res.cookie("accessToken", req.user.tokens.accessToken, {
+        httpOnly: true,
+      })
+      res.cookie("refreshToken", req.user.tokens.refreshToken, {
+        httpOnly: true,
+        path: "/users/refreshToken",
+      })
+
+      res.status(200).redirect("http://localhost:3008/")
+    } catch (error) {
+      next(error)
+    }
+  }
+)
 
 module.exports = authorsRouter

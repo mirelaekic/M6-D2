@@ -15,13 +15,8 @@ const AuthorSchema = new Schema({
     unique:true,
     required:true
   },
-  refreshTokens: [
-    {
-      token: {
-        type:String,
-      }
-    }
-  ]
+  refreshTokens: [{ token: { type: String } }],
+  googleId: String,
  },
  {timestamps:true} 
  )
